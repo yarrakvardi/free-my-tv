@@ -1,0 +1,46 @@
+
+name: Free My TV APK Derle
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kaynak kodunu indir
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK hazirla
+        uses: android-actions/setup-android@v3
+
+      - name: Android araclarini kur
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Turkce ayarlari yap
+        run: |
+          cp config.example.properties config.properties
+          sed -i 's/^language=.*/language=tr/' config.properties
+          sed -i 's/^show_crypto=.*/show_crypto=false/' config.properties
+
+      - name: APK olustur
+        run: |
+          chmod +x build.sh
+          bash build.sh
+
+      - name: APK dosyasini yukle
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeMyTV-Turkce-APK
+          path: FreeMyTV.apk
+          if-no-files-found: error
+          retention-days: 30
+          
