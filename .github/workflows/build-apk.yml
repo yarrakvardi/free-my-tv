@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    name: APK Olustur
     runs-on: ubuntu-latest
 
     steps:
@@ -18,29 +19,42 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Android SDK hazirla
-        uses: android-actions/setup-android@v3
-
-      - name: Android araclarini kur
+      - name: Android SDK yolunu ayarla
         run: |
-          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
 
-      - name: Turkce ayarlari yap
+      - name: Android SDK lisanslarini kabul et
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Android derleme araclarini kur
+        run: |
+          sdkmanager --install \
+            "platforms;android-34" \
+            "build-tools;34.0.0"
+
+      - name: Turkce ayarlari uygula
         run: |
           cp config.example.properties config.properties
           sed -i 's/^language=.*/language=tr/' config.properties
           sed -i 's/^show_crypto=.*/show_crypto=false/' config.properties
+          sed -i 's/^tmdb_region=.*/tmdb_region=TR/' config.properties
 
-      - name: APK olustur
+      - name: APK dosyasini olustur
         run: |
           chmod +x build.sh
           bash build.sh
 
-      - name: APK dosyasini yukle
+      - name: APK imzasini dogrula
+        run: |
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" \
+            verify FreeMyTV.apk
+
+      - name: APK dosyasini indirilebilir yap
         uses: actions/upload-artifact@v4
         with:
           name: FreeMyTV-Turkce-APK
           path: FreeMyTV.apk
           if-no-files-found: error
           retention-days: 30
-          
